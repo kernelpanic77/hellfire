@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/panjf2000/ants"
+
+	"github.com/kernelpanic77/hellfire/pkg/hellfire/http"
 )
 
 type Artillary struct {
@@ -23,8 +25,6 @@ type TaskMissile struct {
 	missile Missile
 }
 
-type task func(t *T)
-
 type Missile func(t task)
 
 func NewMissile(t task, dur int) Missile {
@@ -34,7 +34,6 @@ func NewMissile(t task, dur int) Missile {
 		for range ticker.C {
 			select {
 			case <-timer.C:
-				fmt.Println("Ho gaya!!!")
 				ticker.Stop()
 				break
 			default:
@@ -53,19 +52,17 @@ func (a *Artillary) start(s *Scenario) {
 	poolOptions := ants.WithNonblocking(true)
 	pool, err := ants.NewPoolWithFunc(1000, FireMissile, poolOptions)
 	if err != nil {
-		fmt.Println("ajsldjas")
+		fmt.Println("Error starting worker Pool")
 	}
 	a.active_pool = pool
 	a.init_workers = 1
 	a.spawn_rate = s.Spawn_rate
-	fmt.Println(s)
 	a.target = int(s.Target)
 	a.ticker = *time.NewTicker(time.Second * 1)
 	a.duration = int(s.Duration)
-	// fmt.Print("aijdlajld")
 }
 
-func (a *Artillary) Fire(task func(t *T), done chan bool) {
+func (a *Artillary) Fire(task func(t *T, client *http.Client) bool, done chan bool) {
 	cease_fire := make(chan bool)
 	go func() {
 		start := time.Now()
@@ -78,7 +75,6 @@ func (a *Artillary) Fire(task func(t *T), done chan bool) {
 				fmt.Println(a.active_pool.Running())
 				elapsed := int(time.Since(start) / time.Second)
 				if a.active_pool.Running() < a.target {
-					// fmt.Println(a.spawn_rate)
 					// add tasks equal to spawn rate
 					for i := 0; i < int(a.spawn_rate) && a.active_pool.Running() < a.target; i++ {
 						// var remaining int

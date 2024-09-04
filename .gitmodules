@@ -1,0 +1,3 @@
+[submodule "ginserver"]
+	path = examples/ginserver
+	url = https://github.com/misikdmytro/task-tracker.git
