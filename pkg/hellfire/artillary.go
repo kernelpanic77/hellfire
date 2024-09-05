@@ -37,7 +37,7 @@ func NewMissile(t task, dur int) Missile {
 				ticker.Stop()
 				break
 			default:
-				t(&T{})
+				t(&T{}, http.NewClient())
 			}
 		}
 	}
