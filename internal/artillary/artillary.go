@@ -8,7 +8,16 @@ type Stage struct {
 }
 
 type Artillary struct {
-	init_workers    int
-	stages          []Stage
-	cutoff_duration int
+	init_workers     int
+	stages           []Stage
+	cutoff_duration  int
+	strategy_workers Strategy
+}
+
+func NewArtillary() {
+
+}
+
+func (a *Artillary) run_tests() {
+
 }

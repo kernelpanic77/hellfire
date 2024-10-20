@@ -1,3 +1,0 @@
-[submodule "examples/ginserver"]
-	path = examples/ginserver
-	url = https://github.com/kernelpanic77/task-tracker.git
