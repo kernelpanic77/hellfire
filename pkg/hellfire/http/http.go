@@ -2,6 +2,7 @@ package http
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptrace"
@@ -10,7 +11,6 @@ import (
 )
 
 func getHttpTrace() *httptrace.ClientTrace {
-
 	// variables to track time/duration
 	var (
 		dnsStart, dnsEnd, connStart,
@@ -26,9 +26,9 @@ func getHttpTrace() *httptrace.ClientTrace {
 			connEnd = time.Now()
 
 			if info.Reused {
-				log.Println("connection reused")
+				fmt.Println("connection reused")
 			} else {
-				log.Println("time elapsed for Getting connection in micro seconds ", connEnd.Sub(connStart).Microseconds())
+				fmt.Println("time elapsed for Getting connection in micro seconds ", connEnd.Sub(connStart).Microseconds())
 
 			}
 
@@ -37,13 +37,13 @@ func getHttpTrace() *httptrace.ClientTrace {
 			connectStart = time.Now()
 
 		},
-		ConnectDone: func(network, addr string, err error) {
+		ConnectDone: func(network string, addr string, err error) {
 			connectEnd = time.Now()
 			if err != nil {
-				log.Println("error at ConnectDone", err)
+				fmt.Println("error at ConnectDone", err)
 
 			} else {
-				log.Println("time elapsed to  connect  in micro seconds ", connectEnd.Sub(connectStart).Microseconds())
+				fmt.Println("time elapsed to  connect  in micro seconds ", connectEnd.Sub(connectStart).Microseconds())
 			}
 		},
 		DNSStart: func(info httptrace.DNSStartInfo) {
@@ -51,7 +51,7 @@ func getHttpTrace() *httptrace.ClientTrace {
 		},
 		DNSDone: func(info httptrace.DNSDoneInfo) {
 			dnsEnd = time.Now()
-			log.Println("time elapsed to resolve DNS in micro seconds ", dnsEnd.Sub(dnsStart).Microseconds())
+			fmt.Println("time elapsed to resolve DNS in micro seconds ", dnsEnd.Sub(dnsStart).Microseconds())
 
 		},
 		TLSHandshakeStart: func() {
@@ -59,27 +59,25 @@ func getHttpTrace() *httptrace.ClientTrace {
 		},
 		TLSHandshakeDone: func(state tls.ConnectionState, err error) {
 			if err != nil {
-				log.Println("tls error", err)
+				fmt.Println("tls error", err)
 
 			} else {
 				tlsHandShakeEnd = time.Now()
-				log.Println("time elapsed for TLS Handshake in micro seconds ", tlsHandShakeEnd.Sub(tlsHandShakeStart).Microseconds())
+				fmt.Println("time elapsed for TLS Handshake in micro seconds ", tlsHandShakeEnd.Sub(tlsHandShakeStart).Microseconds())
 
 			}
 
 		},
 		PutIdleConn: func(err error) {
 			if err != nil {
-				log.Println("error at putIdleConn", err)
+				fmt.Println("error at putIdleConn", err)
 			} else {
-				log.Println("put idle connection")
+				fmt.Println("put idle connection")
 			}
 
 		},
 	}
-
 	return trace
-
 }
 
 type Client struct {
@@ -88,30 +86,25 @@ type Client struct {
 	logger     *log.Logger
 }
 
-func NewClient(base string) (*Client, error) {
-	baseURL, err := url.Parse(base)
-	if err != nil {
-		return nil, err
-	}
-
+func NewClient() (*Client, error) {
 	c := &Client{
-		url:        baseURL,
+		url:        &url.URL{},
 		httpClient: http.DefaultClient,
 		logger:     log.Default(),
 	}
 	return c, nil
 }
 
-func (c *Client) Request(method string, URL base) (*http.Response, error) {
-	request := &http.Request{
-		Method: method,
-		URL:    c.url,
+func (c *Client) Request(method string, url string) (*http.Response, error) {
+	request, err := http.NewRequest(method, url, nil)
+	if err == nil {
+		trace_obj := getHttpTrace()
+		req := request.WithContext(httptrace.WithClientTrace(request.Context(), trace_obj))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	}
-	trace_obj := getHttpTrace()
-	req := request.WithContext(httptrace.WithClientTrace(request.Context(), trace_obj))
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return nil, err
 }

@@ -5,9 +5,8 @@ import (
 	"log"
 	"time"
 
+	http "github.com/kernelpanic77/hellfire/pkg/hellfire/http"
 	"github.com/panjf2000/ants"
-
-	"github.com/kernelpanic77/hellfire/pkg/hellfire/http"
 )
 
 type Artillary struct {
@@ -22,7 +21,7 @@ type Artillary struct {
 type TaskMissile struct {
 	idx     int
 	task_fn task
-	missile Missile
+	missile func(t task)
 }
 
 type Missile func(t task)
@@ -35,9 +34,11 @@ func NewMissile(t task, dur int) Missile {
 			select {
 			case <-timer.C:
 				ticker.Stop()
-				break
 			default:
-				t(&T{}, http.NewClient())
+				client, err := http.NewClient()
+				if err == nil {
+					t(&T{}, client)
+				}
 			}
 		}
 	}
@@ -62,7 +63,7 @@ func (a *Artillary) start(s *Scenario) {
 	a.duration = int(s.Duration)
 }
 
-func (a *Artillary) Fire(task func(t *T, client *http.Client) bool, done chan bool) {
+func (a *Artillary) Fire(task task, done chan bool) {
 	cease_fire := make(chan bool)
 	go func() {
 		start := time.Now()

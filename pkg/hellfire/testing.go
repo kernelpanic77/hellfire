@@ -8,10 +8,14 @@ import (
 	"testing"
 	"time"
 
+	exec "github.com/kernelpanic77/hellfire/internal"
+
 	"github.com/schollz/progressbar/v3"
 )
 
 var loc *string = flag.String("location", "World", "Name of location to greet")
+
+var executor *exec.Executor
 
 type Load struct {
 	name string
@@ -59,19 +63,28 @@ func (t *T) Fatal(msg string) {
 }
 
 // Runs each scenario, where s defines the scenario and fn describes the checks to be performed in each iteration
-func Run(s Scenario, t *testing.T, fn task) {
+// func Run(s []Scenario, thresholds []Threshold, t *testing.T, fn task) {
+// 	// somehow initialize the metrics machine which would gather the results of that particular test
+// 	a := &Artillary{init_workers: 0}
+// 	// defer a.stop()
+// 	a.start(&s)
+// 	done := make(chan bool)
+// 	a.Fire(fn, done)
+// 	<-done
+// }
+
+func Run(s []Scenario, thresholds []Threshold, t *testing.T, fn task) (int, error) {
 	// somehow initialize the metrics machine which would gather the results of that particular test
-	a := &Artillary{init_workers: 0}
-	// defer a.stop()
-	a.start(&s)
-	done := make(chan bool)
-	a.Fire(fn, done)
-	<-done
+	task_metadata := &TestMetadata{Scenarios: s, Thresholds: thresholds, T: t, Iteration: fn}
+	executor.RunTest(task_metadata)
+	return 0, nil
 }
 
 // initializes the testing framework for instance environment variables, threads etc.
 func Main(m *testing.M) int {
-	// fmt.Println(loc)
-	m.Run()
-	return 0
+	exitcode, err := executor.Setup(m)
+	if err != nil {
+		panic(err)
+	}
+	return exitcode
 }
