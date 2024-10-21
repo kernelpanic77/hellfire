@@ -43,14 +43,11 @@ func NewWorker() *Worker {
 func (w *Worker) workerLoop() {
 	// run until context doesn;t kill/cutoff time for fixed number of iterations/duration
 	switch Strategy {
-	case shared_iterations:	
-		err := 
+	case shared_iterations:
+		err := w.run_shared_iterations()
 	}
 }
 
 func (w *Worker) run_shared_iterations() error {
 	return nil
-}	
-
-
-
+}

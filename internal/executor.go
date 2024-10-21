@@ -41,7 +41,7 @@ func (e *Executor) setupMetricsEngine() {
 }
 
 func (e *Executor) setupArtillary() {
-	// responsible for activating the initial setu of workers
+	// responsible for activating the initial set of workers
 	//  as well as policy of spawning of workers
 }
 
