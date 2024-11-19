@@ -2,8 +2,10 @@
 // could be extended based on the usecases
 // TODO: httpClient and grpcClient
 
-package hellfire
+package internal
+
+import "net/http"
 
 type Client interface {
-	SendReq()
+	Request(method string, url string) (*http.Response, error)
 }

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	exec "github.com/kernelpanic77/hellfire/internal"
+	exec "github.com/kernelpanic77/hellfire/internal/executor"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -37,10 +37,6 @@ func (t *T) ProgressBar() {
 func (t *T) Log(s string) {
 	log.Println(s)
 }
-
-type CheckFunc func(interface{}) bool
-
-type CheckFuncMap map[string]CheckFunc
 
 func (t *T) Check(val interface{}, checks CheckFuncMap, tag string) bool {
 	check_val := true
@@ -73,7 +69,7 @@ func (t *T) Fatal(msg string) {
 // 	<-done
 // }
 
-func Run(s []Scenario, thresholds []Threshold, t *testing.T, fn task) (int, error) {
+func Run(s []Scenario, thresholds []Threshold, t *testing.T, fn Task) (int, error) {
 	// somehow initialize the metrics machine which would gather the results of that particular test
 	task_metadata := &TestMetadata{Scenarios: s, Thresholds: thresholds, T: t, Iteration: fn}
 	executor.RunTest(task_metadata)
@@ -82,6 +78,7 @@ func Run(s []Scenario, thresholds []Threshold, t *testing.T, fn task) (int, erro
 
 // initializes the testing framework for instance environment variables, threads etc.
 func Main(m *testing.M) int {
+	executor := exec.NewExecutor(m)
 	exitcode, err := executor.Setup(m)
 	if err != nil {
 		panic(err)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -19,7 +20,27 @@ type army struct {
 	scaleFactor float32
 	wg          *sync.WaitGroup
 	lock        *sync.Mutex
+	cancel_ctx	*[]context.CancelFunc
 }
+
+// graceful increase of capacity
+
+// graceful decrease of capacity
+
+func (a *army) kill_workers(count int) error {
+	if(a.ant_pool.Running() >= count) {
+		a.lock.Lock()
+		for i := 0; i < count; i++ {
+			if (*a.cancel_ctx)[i] != nil {
+				fmt.Printf("Calling cancel function %d\n", i+1)
+				(*a.cancel_ctx)[i]() // Invoke each cancel function
+			}
+		}
+		a.lock.Unlock()
+	}
+	return nil
+}
+
 
 func (a *army) Fire(args interface{}) error {
 	// req := )
@@ -33,36 +54,62 @@ func (a *army) Fire(args interface{}) error {
 	return err
 }
 
+type worker struct {
+	ctx context.Context
+	id int
+}
+
 func main() {
 	var wg sync.WaitGroup
+	var lock sync.Mutex
 	pool, err := ants.NewPoolWithFunc(100, func(i interface{}) {
-		// fmt.Printf("%d Hello\n", i.(int))
-		time.Sleep(20 * time.Second)
-		// fmt.Printf("%d Bye\n", i.(int))
-		wg.Done()
-	}, ants.WithNonblocking(false))
+		w := i.(worker) 
+		for {
+			select {
+				case <- w.ctx.Done(): 
+				fmt.Printf("Killing Worker %d", w.id)
+				wg.Done()
+				return
+				default: 
+				// fmt.Printf("Hello from %d", w.id)
+				time.Sleep(time.Millisecond * 500)
+				// fmt.Prin
+			}
+		}
+	}, ants.WithNonblocking(false), ants.WithPreAlloc(true))
 	defer pool.Release()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(pool.Free())
 	tasks := make(chan int, 1000)
-	army := &army{ant_pool: pool, work: tasks, scaleFactor: 0.75, wg: &wg}
-
+	list_of_cancel_funcs := make([]context.CancelFunc, 0)
+	army := &army{ant_pool: pool, work: tasks, scaleFactor: 0.75, wg: &wg, lock: &lock, cancel_ctx: &list_of_cancel_funcs}
 	start := time.Now()
-
-	iterations := 1_000_000
-
-	available = 200
+	available := 200000
 
 	for i := 0; i < available; i++ {
 		// fmt.Printf("Submitting %d, current capacity %d\n", i, army.ant_pool.Cap())
-		err := army.Fire(i)
+		ctx, cancel := context.WithCancel(context.Background())
+		list_of_cancel_funcs = append(list_of_cancel_funcs, cancel)
+		tmp_worker := worker{ctx: ctx, id: i}
+		err := army.Fire(tmp_worker)
 		if err != nil {
 			panic(err)
 		}
 	}
 
+	fmt.Println(pool.Running())
+	army.kill_workers(5)
+	fmt.Println(pool.Running())
+	time.Sleep(1 * time.Second)
+	fmt.Println(pool.Running())
+	time.Sleep(1 * time.Second)
+	fmt.Println(pool.Running())
+	time.Sleep(1 * time.Second)
+	fmt.Println(pool.Running())
 	army.wg.Wait()
 	end := time.Now()
+	pool.Release()
 	fmt.Printf("%f", end.Sub(start).Seconds())
 }

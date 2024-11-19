@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	http "github.com/kernelpanic77/hellfire/pkg/hellfire/http"
+	// http "github.com/kernelpanic77/hellfire/pkg/hellfire/http"
 	"github.com/panjf2000/ants"
 )
 
@@ -20,14 +20,16 @@ type Artillary struct {
 
 type TaskMissile struct {
 	idx     int
-	task_fn task
-	missile func(t task)
+	task_fn Task
+	missile func(t Task)
 }
 
-type Missile func(t task)
+type Missile func(t Task)
 
-func NewMissile(t task, dur int) Missile {
-	return func(t task) {
+var _ Test = &T{}
+
+func NewMissile(t Task, dur int) Missile {
+	return func(t Task) {
 		ticker := time.NewTicker(1 * time.Second)
 		timer := time.NewTimer(time.Duration(dur) * time.Second)
 		for range ticker.C {
@@ -35,9 +37,9 @@ func NewMissile(t task, dur int) Missile {
 			case <-timer.C:
 				ticker.Stop()
 			default:
-				client, err := http.NewClient()
+				client, err := NewClient()
 				if err == nil {
-					t(&T{}, client)
+					t(&T{}, &client)
 				}
 			}
 		}
@@ -58,12 +60,12 @@ func (a *Artillary) start(s *Scenario) {
 	a.active_pool = pool
 	a.init_workers = 1
 	a.spawn_rate = s.Spawn_rate
-	a.target = int(s.Target)
+	// a.target = int(s.Target)
 	a.ticker = *time.NewTicker(time.Second * 1)
-	a.duration = int(s.Duration)
+	// a.duration = int(s.Duration)
 }
 
-func (a *Artillary) Fire(task task, done chan bool) {
+func (a *Artillary) Fire(task Task, done chan bool) {
 	cease_fire := make(chan bool)
 	go func() {
 		start := time.Now()

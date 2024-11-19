@@ -8,5 +8,7 @@ const (
 	constant_workers
 	ramping_workers
 	constant_arrival_rate
-	ramping_arriva_rate
+	ramping_arrival_rate
 )
+
+

@@ -1,4 +1,4 @@
-package http
+package hellfire
 
 import (
 	"crypto/tls"
@@ -64,9 +64,7 @@ func getHttpTrace() *httptrace.ClientTrace {
 			} else {
 				tlsHandShakeEnd = time.Now()
 				fmt.Println("time elapsed for TLS Handshake in micro seconds ", tlsHandShakeEnd.Sub(tlsHandShakeStart).Microseconds())
-
 			}
-
 		},
 		PutIdleConn: func(err error) {
 			if err != nil {
@@ -86,8 +84,8 @@ type Client struct {
 	logger     *log.Logger
 }
 
-func NewClient() (*Client, error) {
-	c := &Client{
+func NewClient() (Client, error) {
+	c := Client{
 		url:        &url.URL{},
 		httpClient: http.DefaultClient,
 		logger:     log.Default(),

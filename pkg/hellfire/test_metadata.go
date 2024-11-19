@@ -26,5 +26,10 @@ type TestMetadata struct {
 	Scenarios  []Scenario
 	Thresholds []Threshold
 	T          *testing.T
-	Iteration  task
+	Iteration  Task
 }
+
+func (t *TestMetadata) Validate() bool {
+	return true
+}
+

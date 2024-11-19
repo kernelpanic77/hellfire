@@ -5,9 +5,8 @@ import "testing"
 // manages the entire lifecycle of the test
 
 type Manager struct {
-	// metrics engine
-	testState   TestState   // test state
-	workerState WorkerState // workers state
+	// 
+	testState   *TestState   // test state
 }
 
 func (m *Manager) Init(main *testing.M) {
@@ -21,4 +20,4 @@ func (m *Manager) Start() {
 	// 
 }
 
-func (m *)
+// func (m *)

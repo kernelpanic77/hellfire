@@ -1,9 +1,15 @@
 package hellfire
 
-import (
-	http "github.com/kernelpanic77/hellfire/pkg/hellfire/http"
-)
+type Test interface {
+	Check(val interface{}, checks CheckFuncMap, tag string) bool
+	Fatal(msg string)
+	Log(s string)
+	ProgressBar()
+}
 
-type task func(t *T, client *http.Client) bool
+type Task func(t Test, client *Client) bool
 
 // type iteration func(t *T, client *hellfire_http.Client) bool
+type CheckFunc func(interface{}) bool
+
+type CheckFuncMap map[string]CheckFunc

@@ -1,4 +1,4 @@
-package http
+package hellfire
 
 type Params struct {
 	timeout   int32

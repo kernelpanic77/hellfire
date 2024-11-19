@@ -48,7 +48,7 @@ func (p *PeriodicFlusher) Flush(ctx context.Context) {
 			fmt.Println("Stop Flushing Metrics")
 			return
 		case <-p.timer.C:
-			p.callback()
+			// p.callback()
 		}
 	}
 }

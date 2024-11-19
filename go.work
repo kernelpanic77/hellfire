@@ -1,7 +1,3 @@
 go 1.22.5
 
-use (
-	./examples/ginserver
-	./internal
-	./pkg/hellfire
-)
+use ./
