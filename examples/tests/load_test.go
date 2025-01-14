@@ -30,25 +30,25 @@ func iteration(t common.Test, client common.Client) bool {
 
 func TestFireCreateListLoad(t *testing.T) {
 	scenarios := []common.Scenario{
-		// {
-		// 	Startegy: "shared-iterations",
-		// 	Name:            "warmup",
-		// 	PreAllocatedVUs: 10,
-		// 	Stages: []common.Stage{
-		// 		{
-		// 			Target:   5,
-		// 			Duration: 0,
-		// 		},
-		// 		{
-		// 			Target:   5,
-		// 			Duration: 2,
-		// 		},
-		// 		{
-		// 			Target:   15,
-		// 			Duration: 10,
-		// 		},
-		// 	},
-		// },
+		{
+			Strategy: "rampup",
+			Name:            "warmup",
+			PreAllocatedVUs: 10,
+			Stages: []common.Stage{
+				{
+					Target:   5,
+					Duration: 0,
+				},
+				{
+					Target:   5,
+					Duration: 2,
+				},
+				{
+					Target:   15,
+					Duration: 10,
+				},
+			},
+		},
 		{
 			Strategy: "shared-iterations",  
 			Name: "warmup", 
