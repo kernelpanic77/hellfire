@@ -11,4 +11,13 @@ const (
 	ramping_arrival_rate
 )
 
-
+func NewStrategy(strategy string) Strategy {
+	var ret_strategy Strategy
+	switch strategy {
+	case "shared-iterations": 
+	ret_strategy = shared_iterations
+	case "per-worker-iteraitons": 
+	ret_strategy = per_worker_iterations
+	}
+	return ret_strategy
+}

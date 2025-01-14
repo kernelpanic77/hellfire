@@ -12,5 +12,11 @@ type TestState struct {
 	// number of iterations executed
 	// curve of rise and fall of VUs so far 
 	// Current Summary for the user
-	// current state of artillary -> like the number of VUs which are running, available and pool size etc
+}
+
+// Should manage the test state, spins up a goroutine to keep managing the summary/state of the test constantly
+// Basically just constantly reads the metrics registry for metrics data 
+// Artillary for the state of VUs/workers
+type StateManager struct {
+	
 }

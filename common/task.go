@@ -1,6 +1,4 @@
-package hellfire
-
-import "github.com/kernelpanic77/hellfire/common"
+package common
 
 type Test interface {
 	Check(val interface{}, checks CheckFuncMap, tag string) bool
@@ -9,7 +7,7 @@ type Test interface {
 	ProgressBar()
 }
 
-type Task func(t Test, client common.Client) bool
+type Task func(t Test, client Client) bool
 
 // type iteration func(t *T, client *hellfire_http.Client) bool
 type CheckFunc func(interface{}) bool
