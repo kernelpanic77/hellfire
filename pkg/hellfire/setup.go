@@ -15,7 +15,7 @@ var executor *exec.Executor
 func Run(s []common.Scenario, thresholds []common.Threshold, t *testing.T, fn common.Task) (int, error) {
 	test_metadata := &common.TestMetadata{Scenarios: s, Thresholds: thresholds, T: t, Iteration: fn}
 	executor.RunTest(test_metadata)
-	// fmt.Println(executor)
+	// //fmt.Println(executor)
 	return 0, nil
 }
 

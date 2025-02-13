@@ -28,7 +28,7 @@ package tests
 // 			// status == 200
 // 			// response body non empty
 // 			t.ProgressBar()
-// 			// fmt.Println(*loc)
+// 			// //fmt.Println(*loc)
 // 			// t.Validate()
 // 			// t.ProgressBar()
 // 		})

@@ -2,7 +2,6 @@ package artillary
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -90,23 +89,23 @@ func (w *Worker) run_iteration() metrics.SampleContainer {
 func RunForIterations() PoolFunc {
 	return func(i interface {}) {
 		w := i.(Worker) 
-		fmt.Println("I am a worker")
-		fmt.Println(w)
-		// for i := 0; i < w.target_iterations; i++ {
-		// 	for {
-		// 		select {
-		// 			case <- w.worker_ctx.Done():
-		// 				w.worker_wg.Done()
-		// 			default: 
-		// 				samples := w.run_iteration()
-		// 				// if !complete {
-		// 				// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i)) 
-		// 				// }\
-		// 				fmt.Println(samples)
-		// 				w.samples_chan <- samples
-		// 		}
-		// 	}
-		// }
+		//fmt.Println("I am a worker")
+		//fmt.Println(w)
+		for i := 0; i < w.target_iterations; i++ {
+			for {
+				select {
+					case <- w.worker_ctx.Done():
+						w.worker_wg.Done()
+					default: 
+						samples := w.run_iteration()
+						// if !complete {
+						// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i)) 
+						// }\
+						//fmt.Println(samples)
+						w.samples_chan <- samples
+				}
+			}
+		}
 	}
 }	
 
@@ -117,8 +116,8 @@ func RunForConstantTime() PoolFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(w.target_duration))
 		w.worker_ctx = ctx 
 		w.worker_cancel = cancel
-		fmt.Println("I am a worker")
-		fmt.Println(w)
+		//fmt.Println("I am a worker")
+		//fmt.Println(w)
 		for {
 			select {
 			case <- w.worker_ctx.Done(): 
@@ -163,7 +162,7 @@ func RunOnce() PoolFunc {
 		case w.samples_chan <- samples:
 		default:
 			// If the channel is full or unavailable, do nothing
-			fmt.Println("Samples channel is full or unavailable")
+			//fmt.Println("Samples channel is full or unavailable")
 		}
 	}
 }

@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -22,10 +21,10 @@ type SampleBuffer struct {
 func (sb *SampleBuffer) PushSamples(samples []SampleContainer) {
 	sb.mu.Lock()
 	defer sb.mu.Unlock()
-	fmt.Println("PushSamples")
-	fmt.Println(samples)
+	//fmt.Println("PushSamples")
+	//fmt.Println(samples)
 	sb.buffer = append(sb.buffer, samples...)
-	fmt.Println(sb.buffer)
+	//fmt.Println(sb.buffer)
 }
 
 func (sb *SampleBuffer) FetchSamples() []SampleContainer {
@@ -49,11 +48,11 @@ func (p *PeriodicFlusher) Flush(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("Stop Flushing Metrics")
+			//fmt.Println("Stop Flushing Metrics")
 			return
 		case <-p.ticker.C:
 			p.buffer.send_to_sink()
-			// fmt.Println(p.buffer)
+			// //fmt.Println(p.buffer)
 		}
 	}
 }
@@ -79,10 +78,10 @@ func NewIngester() *Ingester {
 	}
 }
 
-func (i *Ingester) Start(wg *sync.WaitGroup, ctx context.Context) { // Should basically start a go routine which start a goroutine to flush metrics to respective Metrics Sink
+func (i *Ingester) Start(wg *sync.WaitGroup, ctx context.Context) { // Should basically start a go routine to flush metrics to respective Metrics Sink
 	defer wg.Done()
 	i.flusher.Flush(ctx)
-	fmt.Println("golang")
+	//fmt.Println("golang")
 }
 
 func (i *Ingester) AddSamples(samples []SampleContainer) { // Should push the samples to the buffer
@@ -98,9 +97,10 @@ func (b *SampleBuffer) send_to_sink() {
 			// push to the sink of the sample
 			mlist := sample.metric
 			for _, m := range mlist {
+				//fmt.Println(m.Name)
 				m.Sink.AddSample(sample)
 			}
-			// fmt.Println(m.Sink.FetchSampleValue())
+			// //fmt.Println(m.Sink.FetchSampleValue())
 		}
 	}
 }

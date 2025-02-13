@@ -81,7 +81,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(pool.Free())
+	//fmt.Println(pool.Free())
 	tasks := make(chan int, 1000)
 	list_of_cancel_funcs := make([]context.CancelFunc, 0)
 	army := &army{ant_pool: pool, work: tasks, scaleFactor: 0.75, wg: &wg, lock: &lock, cancel_ctx: &list_of_cancel_funcs}
@@ -99,15 +99,15 @@ func main() {
 		}
 	}
 
-	fmt.Println(pool.Running())
+	//fmt.Println(pool.Running())
 	army.kill_workers(5)
-	fmt.Println(pool.Running())
+	//fmt.Println(pool.Running())
 	time.Sleep(1 * time.Second)
-	fmt.Println(pool.Running())
+	//fmt.Println(pool.Running())
 	time.Sleep(1 * time.Second)
-	fmt.Println(pool.Running())
+	//fmt.Println(pool.Running())
 	time.Sleep(1 * time.Second)
-	fmt.Println(pool.Running())
+	//fmt.Println(pool.Running())
 	army.wg.Wait()
 	end := time.Now()
 	pool.Release()

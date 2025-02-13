@@ -1,6 +1,8 @@
 package metrics
 
-import "math"
+import (
+	"math"
+)
 
 // Responsible for Aggregating Metrics
 type Sink interface {
@@ -61,6 +63,7 @@ func (t *TrendSink) AddSample(s Sample) {
 	t.datapoints = append(t.datapoints, s.val) 
 	t.MeanVal = t.cumulativeSum / float64(len(t.datapoints)) 
 	t.medianHeap.Add(s.val) 
+	//fmt.Println(t)
 }
 
 func (t *TrendSink) FetchSampleValue() float64 {
@@ -68,6 +71,7 @@ func (t *TrendSink) FetchSampleValue() float64 {
 }
 
 func (t *TrendSink) FetchTrends() []float64 {
+	//fmt.Println(t)
 	return []float64{t.MeanVal, t.medianHeap.FindMedian(), t.datapoints.FindPercentile(90), t.datapoints.FindPercentile(95)}
 }
 type RateSink struct {
@@ -95,7 +99,7 @@ func NewSink(Type MetricType) Sink {
 	case Guage: 
 		sink = &GuageSink{MaxVal: math.MinInt64, MinVal: math.MaxInt64, RecentVal: math.MinInt64}
 	case Trend: 
-		sink = &TrendSink{datapoints: make([]float64, 0), MeanVal: 0.0, MedianVal: 0.0, P90Val: 0.0, P95Val: 0.0}
+		sink = &TrendSink{datapoints: make([]float64, 0), MeanVal: 0.0, MedianVal: 0.0, P90Val: 0.0, P95Val: 0.0, medianHeap: *NewMedianHeap()}
 	case Rate: 
 		sink = &RateSink{Val: 0.0, count: 0, sum: 0}
 	}

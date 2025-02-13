@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -44,6 +43,8 @@ func (tm *TestManager) init() {
 	// setup the metrics machine
 	registry := metrics.NewMetricsRegistry()
 	report := state.NewReport(tm.test_context, registry)
+	// //fmt.Println("Registry")
+	// //fmt.Println(tm.report.Registry)
 	tm.report = report
 	// const registryKey string = "registry"
 	metrics.RegistryOfRegistry["test_name"] = registry
@@ -76,6 +77,6 @@ func (tm *TestManager) setup() {
 // should start the goroutine to trigger the infantry 
 func (tm *TestManager) start() {
 	tm.waitgroup.Add(1)
-	fmt.Println("starting the test manager")
+	//fmt.Println("starting the test manager")
 	go tm.infantry.Action(tm.waitgroup, tm.test_termination)
 }

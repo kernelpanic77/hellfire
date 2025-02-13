@@ -37,7 +37,7 @@ func ConvertFloatSliceToStringSlice(floatSlice []float64) []interface{} {
 // Progress bar for total test duration 
 // Metric avg min med max p(90) p(95) 
 type Report struct {
-	registry *metrics.MetricsRegistry
+	Registry *metrics.MetricsRegistry
 	tableWriter  table.Writer
 	context context.Context
 }
@@ -45,26 +45,27 @@ type Report struct {
 
 func NewReport(ctx context.Context, registry *metrics.MetricsRegistry) *Report {
 	return &Report{
-		registry: registry,  
+		Registry: registry,  
 		tableWriter: table.NewWriter(),
 		context: ctx,
 	}
 }
 
-func (report *Report) createColumnConfigs() []table.ColumnConfig {
+func (report *Report) createRowHeaders() table.Row {
 	// iterate over all metrics in 
-	cols := []table.ColumnConfig{}
+	rows  := table.Row{}
 	for i := 0; i < len(colTitles); i++ {
-		cols = append(cols, table.ColumnConfig{Name: colTitles[i]})
+		rows  = append(rows , colTitles[i])
 	}
-	return cols
+	return rows 
 }
 
 func (report *Report) GenerateReport() string {
-	colConfigs := report.createColumnConfigs()
-	report.tableWriter.SetColumnConfigs(colConfigs)
+	colConfigs := report.createRowHeaders()
+	report.tableWriter.AppendHeader(colConfigs)
+	// report.tableWriter.SetColumnConfigs(colConfigs)
 	report.tableWriter.SetAutoIndex(true) 
-	for name, mlist := range report.registry.Metrics {
+	for name, mlist := range report.Registry.Metrics {
 		r := table.Row{name}
 		for _, m := range mlist {
 			if m.Type == metrics.Counter || m.Type == metrics.Rate {

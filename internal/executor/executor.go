@@ -48,6 +48,7 @@ func (e *Executor) RunTest(testmetadata *common.TestMetadata) {
 	// @ishanwar: TODO: Should only kill the ingester once all the metrics channel is empty and the Buffer of the ingester is also empty 
 
 	// once we have a confirmed completion, trigger the metrics table prep 
+	// //fmt.Println("Registry", tm.report.Registry)
 	report_for_term := tm.report.GenerateReport()
 	fmt.Println(report_for_term)
 }

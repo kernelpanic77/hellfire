@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"container/heap"
+	// "fmt"
 	"sort"
 )
 
@@ -13,7 +14,11 @@ func (h MaxHeap) Len() int           { return len(h) }
 func (h MaxHeap) Less(i, j int) bool { return h[i] > h[j] } // max-heap
 func (h MaxHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 func (h *MaxHeap) Push(x any) {
-	*h = append(*h, x.(float64))
+	value, ok := x.(float64) 
+	if !ok {
+		panic("expected float64 value")
+	}
+	*h = append(*h, value)
 }
 func (h *MaxHeap) Pop() any {
 	old := *h
@@ -42,6 +47,12 @@ type MedianHeap struct {
 	maxHeap *MaxHeap
 }
 
+func NewMedianHeap() *MedianHeap {
+	return &MedianHeap{
+		minHeap: &MinHeap{},
+		maxHeap: &MaxHeap{},
+	}
+}
 
 func (mh *MedianHeap) Add(value float64) {
 	// Insert into maxHeap first
@@ -60,9 +71,15 @@ func (mh *MedianHeap) Add(value float64) {
 		heap.Push(mh.maxHeap, minVal)
 		heap.Push(mh.minHeap, maxVal)
 	}
+
+	// fmt.Printf("max heap size, %d\n", mh.maxHeap.Len()) 
+	// fmt.Printf("min heap size, %d\n", mh.minHeap.Len())
 }
 
 func (mh *MedianHeap) FindMedian() float64 {
+	if (mh.maxHeap.Len() == 0)  {
+		return 0.0
+	}
 	if mh.maxHeap.Len() > mh.minHeap.Len() {
 		return (*mh.maxHeap)[0]
 	}
@@ -73,6 +90,9 @@ func (mh *MedianHeap) FindMedian() float64 {
 func (d Datapoints) FindPercentile(p int16) float64 {
 	sort.Float64s(d)
 	n := len(d) 
-	idx := int(float64(p) * float64(n - 1))
+	if n == 0 {
+		return 0.0
+	}
+	idx := int(float64(p / 100.00) * float64(n - 1))
 	return d[idx]
 }

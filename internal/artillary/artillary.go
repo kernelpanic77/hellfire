@@ -2,7 +2,6 @@ package artillary
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -84,7 +83,7 @@ func (a *Artillary) start_shared_iterations(wg *sync.WaitGroup) {
 		defer wg.Done()
 		for i := 0; i < a.SharedIterations; i++ {
 			w := NewWorker(i, a.task, a.ctx, a.metrics_chan, wg)
-			fmt.Println("triggering the test for worker")
+			//fmt.Println("triggering the test for worker")
 			a.worker_pool.Invoke(w)
 		}
 	}()
@@ -105,7 +104,7 @@ func (a *Artillary) StartArtillary() {
 	go func() {
 		defer test_wg.Done()
 		<-timer.C
-		fmt.Println("Bas Khatam")
+		//fmt.Println("Bas Khatam")
 	}()
 	switch a.strategy_workers {
 	case shared_iterations: 

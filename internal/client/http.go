@@ -2,7 +2,6 @@ package client
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -56,7 +55,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 			connEnd = time.Now()
 
 			if info.Reused {
-				fmt.Println("connection reused")
+				//fmt.Println("connection reused")
 			} else {
 				h.time_for_rcv_connection = connEnd.Sub(connStart).Milliseconds()
 			}
@@ -67,7 +66,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 		ConnectDone: func(network string, addr string, err error) {
 			connectEnd = time.Now()
 			if err != nil {
-				fmt.Println("error at ConnectDone", err)
+				//fmt.Println("error at ConnectDone", err)
 
 			} else {
 				h.time_for_establish_connection = connectEnd.Sub(connectStart).Milliseconds()
@@ -85,7 +84,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 		},
 		TLSHandshakeDone: func(state tls.ConnectionState, err error) {
 			if err != nil {
-				fmt.Println("tls error", err)
+				//fmt.Println("tls error", err)
 			} else {
 				tlsHandShakeEnd = time.Now()
 				h.time_for_tls_handshake = tlsHandShakeEnd.Sub(tlsHandShakeStart).Milliseconds()
@@ -93,9 +92,9 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 		},
 		PutIdleConn: func(err error) {
 			if err != nil {
-				fmt.Println("error at putIdleConn", err)
+				//fmt.Println("error at putIdleConn", err)
 			} else {
-				fmt.Println("put idle connection")
+				//fmt.Println("put idle connection")
 			}
 		},
 		WroteHeaders: func() {

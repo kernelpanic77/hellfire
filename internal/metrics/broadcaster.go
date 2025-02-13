@@ -27,13 +27,13 @@ func (b *Broadcaster) Start(wg *sync.WaitGroup, containers chan SampleContainer)
 	for {
 		select {
 		case <-ticker.C:
-			// fmt.Println("Ishan is a fucking genius")
+			// //fmt.Println("Ishan is a fucking genius")
 			data := FetchBufferedSamples(containers)
 			for _, endpoint := range b.endpoints {
 				// this method should be non blocking, because if we are running multiple tests 
 				// all of the TestManagers are writing to the buffer we dont want write to be blocked for that endpoint
-				// fmt.Println("endpoints")
-				// fmt.Println(endpoint)
+				// //fmt.Println("endpoints")
+				// //fmt.Println(endpoint)
 				for _, samples := range data {
 					endpoint.AddSamples([]SampleContainer{samples}) 
 				}
