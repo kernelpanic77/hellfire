@@ -13,29 +13,29 @@ import (
 )
 
 type HttpObject struct {
-	req *http.Request
+	req  *http.Request
 	resp *http.Response
-	
+
 	time_req_start time.Time
 	// idle time to obtain connection from the pool
-	time_connection_blocked int64 
+	time_connection_blocked int64
 
 	// connection establish metrics
-	time_for_rcv_connection int64
-	time_for_tls_handshake int64  
-	time_for_dns int64  
+	time_for_rcv_connection       int64
+	time_for_tls_handshake        int64
+	time_for_dns                  int64
 	time_for_establish_connection int64
 
-	// time taken to send the request 
+	// time taken to send the request
 	time_for_req_sending int64
-	// also known as TTFB, time till first byte  
+	// also known as TTFB, time till first byte
 	time_for_req_waiting int64
 
 	time_till_first_byte time.Time
-	// time taken to receive the entire response 
-	time_for_recv_response int64 
+	// time taken to receive the entire response
+	time_for_recv_response int64
 
-	request_status bool 
+	request_status bool
 }
 
 func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
@@ -43,7 +43,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 	var (
 		dnsStart, dnsEnd, connStart,
 		connEnd, connectStart, connectEnd,
-		tlsHandShakeStart, tlsHandShakeEnd, 
+		tlsHandShakeStart, tlsHandShakeEnd,
 		start_waiting_time, start_write_headers time.Time
 	)
 
@@ -57,7 +57,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 			if info.Reused {
 				//fmt.Println("connection reused")
 			} else {
-				h.time_for_rcv_connection = connEnd.Sub(connStart).Milliseconds()
+				h.time_for_rcv_connection = connEnd.Sub(connStart).Microseconds()
 			}
 		},
 		ConnectStart: func(network, addr string) {
@@ -69,7 +69,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 				//fmt.Println("error at ConnectDone", err)
 
 			} else {
-				h.time_for_establish_connection = connectEnd.Sub(connectStart).Milliseconds()
+				h.time_for_establish_connection = connectEnd.Sub(connectStart).Microseconds()
 			}
 		},
 		DNSStart: func(info httptrace.DNSStartInfo) {
@@ -77,7 +77,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 		},
 		DNSDone: func(info httptrace.DNSDoneInfo) {
 			dnsEnd = time.Now()
-			h.time_for_dns = dnsEnd.Sub(dnsStart).Milliseconds()
+			h.time_for_dns = dnsEnd.Sub(dnsStart).Microseconds()
 		},
 		TLSHandshakeStart: func() {
 			tlsHandShakeStart = time.Now()
@@ -87,7 +87,7 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 				//fmt.Println("tls error", err)
 			} else {
 				tlsHandShakeEnd = time.Now()
-				h.time_for_tls_handshake = tlsHandShakeEnd.Sub(tlsHandShakeStart).Milliseconds()
+				h.time_for_tls_handshake = tlsHandShakeEnd.Sub(tlsHandShakeStart).Microseconds()
 			}
 		},
 		PutIdleConn: func(err error) {
@@ -102,14 +102,15 @@ func (h *HttpObject) getHttpTrace() *httptrace.ClientTrace {
 		},
 		WroteRequest: func(w httptrace.WroteRequestInfo) {
 			if w.Err == nil {
-				h.time_for_req_sending = time.Since(start_write_headers).Milliseconds() 
+				h.time_for_req_sending = time.Since(start_write_headers).Microseconds()
 				start_waiting_time = time.Now()
 			}
 		},
 		GotFirstResponseByte: func() {
-			h.time_for_req_waiting = time.Since(start_waiting_time).Milliseconds()
-			h.time_till_first_byte = time.Now() 
-		}, 
+			h.time_for_req_waiting = time.Since(start_waiting_time).Microseconds()
+			h.time_till_first_byte = time.Now()
+			// h.time_till_first_byte = h.time_for_req_waiting
+		},
 	}
 	return trace
 }
@@ -118,9 +119,8 @@ type Client struct {
 	url        *url.URL
 	httpClient *http.Client
 	logger     *log.Logger
-	samples metrics.SampleContainer
+	samples    metrics.SampleContainer
 }
-
 
 func (h *HttpObject) GetHttpReqObjectSize() (bodySize int64, headersSize int, err error) {
 	// Calculate body size
@@ -141,21 +141,21 @@ func (h *HttpObject) GetHttpReqObjectSize() (bodySize int64, headersSize int, er
 
 func (h *HttpObject) getBodyHeaderSize(typ string) (bodySize int64, headerSize int64) {
 	var body io.ReadCloser
-	var header http.Header 
-	
+	var header http.Header
+
 	if typ == "req" {
-		body = h.req.Body 
-		header = h.req.Header 
-	} else if (typ == "resp") {
+		body = h.req.Body
+		header = h.req.Header
+	} else if typ == "resp" {
 		body = h.resp.Body
-		header = h.resp.Header 
+		header = h.resp.Header
 	}
 
 	if body != nil {
 		bodySize, _ = io.Copy(io.Discard, h.resp.Body)
 	} else {
 		bodySize = 0
-	}  // Use io.Discard instead of ioutil.Discard
+	} // Use io.Discard instead of ioutil.Discard
 	// Calculate headers size
 	for key, values := range header {
 		headerSize += int64(len(key) + 2) // Include ": "
@@ -165,7 +165,7 @@ func (h *HttpObject) getBodyHeaderSize(typ string) (bodySize int64, headerSize i
 	}
 	headerSize += 2 // Final CRLF after headers
 	// objectReqSize = float64(bodySize + int64(headerSize))
-	return 
+	return
 }
 
 func (h *HttpObject) GetHttpObjectSize() (objectReqSize float64, objectRespSize float64, err error) {
@@ -174,7 +174,7 @@ func (h *HttpObject) GetHttpObjectSize() (objectReqSize float64, objectRespSize 
 	bodyRespSize, headersRespSize := h.getBodyHeaderSize("resp")
 	objectReqSize = float64(bodyReqSize + int64(headersReqSize))
 	objectRespSize = float64(bodyRespSize + int64(headersRespSize))
-	return 
+	return
 }
 
 func NewClient() (Client, error) {
@@ -182,25 +182,30 @@ func NewClient() (Client, error) {
 		url:        &url.URL{},
 		httpClient: http.DefaultClient,
 		logger:     log.Default(),
-		samples: metrics.Samples{},
+		samples:    metrics.Samples{},
 	}
 	return c, nil
 }
 
 func (c *Client) PrepareIterationMetricSamples(h *HttpObject) {
 	send_data, recv_data, _ := h.GetHttpObjectSize()
-	registry := metrics.RegistryOfRegistry["test_name"] 
+	registry := metrics.RegistryOfRegistry["test_name"]
 	timestamp := time.Now()
+	iterations_sample := metrics.NewSample(registry.FetchMetricByName("iterations"), timestamp, "iterations", 1)
+	dropped_iterations_sample := metrics.NewSample(registry.FetchMetricByName("dropped_iterations"), timestamp, "dropped_iterations", 0)
 	send_data_sample := metrics.NewSample(registry.FetchMetricByName("send_data"), timestamp, "send_data", send_data)
 	recv_data_sample := metrics.NewSample(registry.FetchMetricByName("recv_data"), timestamp, "recv_data", recv_data)
-	time_for_rcv_connection := metrics.NewSample(registry.FetchMetricByName("time_for_rcv_connection"), timestamp, "time_for_rcv_connection", float64(h.time_for_rcv_connection / 1000))
-	time_for_tls_handshake := metrics.NewSample(registry.FetchMetricByName("time_for_tls_handshake"), timestamp, "time_for_tls_handshake", float64(h.time_for_tls_handshake / 1000))  
-	time_for_dns := metrics.NewSample(registry.FetchMetricByName("time_for_dns"), timestamp, "time_for_dns", float64(h.time_for_dns / 1000))  
-	time_for_establish_connection := metrics.NewSample(registry.FetchMetricByName("time_for_establish_connection"), timestamp, "time_for_establish_connection", float64(h.time_for_establish_connection / 1000)) 
-	time_for_req_sending := metrics.NewSample(registry.FetchMetricByName("time_for_req_sending"), timestamp, "time_for_req_sending", float64(h.time_for_req_sending / 1000))
-	time_for_req_waiting := metrics.NewSample(registry.FetchMetricByName("time_for_req_waiting"), timestamp, "time_for_req_waiting", float64(h.time_for_req_waiting / 1000))
-	time_for_recv_response := metrics.NewSample(registry.FetchMetricByName("time_for_recv_response"), timestamp, "time_for_recv_response", float64(h.time_for_recv_response / 1000)) 
-	c.samples = metrics.Samples{send_data_sample, recv_data_sample, time_for_rcv_connection, time_for_tls_handshake, time_for_dns, time_for_establish_connection, time_for_req_sending, time_for_req_waiting, time_for_recv_response}
+	// fmt.Println(h)
+	base := float64(1000)
+	time_for_rcv_connection := metrics.NewSample(registry.FetchMetricByName("time_for_rcv_connection"), timestamp, "time_for_rcv_connection", float64(h.time_for_rcv_connection)/base)
+	time_for_tls_handshake := metrics.NewSample(registry.FetchMetricByName("time_for_tls_handshake"), timestamp, "time_for_tls_handshake", float64(h.time_for_tls_handshake)/base)
+	time_for_dns := metrics.NewSample(registry.FetchMetricByName("time_for_dns"), timestamp, "time_for_dns", float64(h.time_for_dns)/base)
+	time_for_establish_connection := metrics.NewSample(registry.FetchMetricByName("time_for_establish_connection"), timestamp, "time_for_establish_connection", float64(h.time_for_establish_connection)/base)
+	time_for_req_sending := metrics.NewSample(registry.FetchMetricByName("time_for_req_sending"), timestamp, "time_for_req_sending", float64(h.time_for_req_sending)/base)
+	time_for_req_waiting := metrics.NewSample(registry.FetchMetricByName("time_for_req_waiting"), timestamp, "time_for_req_waiting", float64(h.time_for_req_waiting)/base)
+	time_for_recv_response := metrics.NewSample(registry.FetchMetricByName("time_for_recv_response"), timestamp, "time_for_recv_response", float64(h.time_for_recv_response)/base)
+	c.samples = metrics.Samples{send_data_sample, recv_data_sample, time_for_rcv_connection, time_for_tls_handshake, time_for_dns, time_for_establish_connection, time_for_req_sending, time_for_req_waiting, time_for_recv_response,
+		iterations_sample, dropped_iterations_sample}
 }
 
 func (c *Client) CollectMetrics() metrics.SampleContainer {
@@ -211,7 +216,7 @@ func (c *Client) CollectMetrics() metrics.SampleContainer {
 
 func (c *Client) Request(method string, url string) (*http.Response, error) {
 	request, err := http.NewRequest(method, url, nil)
-	var resp *http.Response = nil 
+	var resp *http.Response = nil
 	h := &HttpObject{}
 	trace_obj := h.getHttpTrace()
 	if err != nil {
@@ -221,7 +226,7 @@ func (c *Client) Request(method string, url string) (*http.Response, error) {
 	}
 
 	req := request.WithContext(httptrace.WithClientTrace(request.Context(), trace_obj))
-	h.time_req_start = time.Now() 
+	h.time_req_start = time.Now()
 	req_client := &http.Client{Transport: &http.Transport{}}
 	resp, err = req_client.Do(req)
 	if err != nil {
@@ -230,8 +235,8 @@ func (c *Client) Request(method string, url string) (*http.Response, error) {
 		return nil, err
 	}
 
-	h.time_for_recv_response = int64(time.Since(h.time_till_first_byte))
-	h.req = req 
+	h.time_for_recv_response = int64(time.Since(h.time_till_first_byte).Milliseconds())
+	h.req = req
 	h.resp = resp
 	h.request_status = true
 	c.PrepareIterationMetricSamples(h)

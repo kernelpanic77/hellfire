@@ -47,89 +47,88 @@ import (
 // run for constant time
 // run until it is killed like performing iterations constantly
 
-
 type PoolFunc func(interface{})
 
 type Worker struct {
-	worker_id         int
-	target_iterations int                            // number of iterations worker must complete
-	target_duration   int                            // target duration for the worker
-	cutoff_duration   int                            // cutoff the worker after specific time
-	iteration_func    common.Task             // function which worker is supposed to run
-	worker_ctx        context.Context               // context for each 
-	worker_cancel 	  context.CancelFunc			// cancel function for the context
-	worker_ctx_timeout        context.Context               // context for each 
-	worker_cancel_timeout 	  context.CancelFunc			// cancel function for the context
-	kill_worker       chan (bool)                    // kill worker channel
-	samples_chan      chan metrics.SampleContainer // dedicated channel for sending metrics
-	strategy          Strategy                       // Strategy in workers
-	worker_wg 		  *sync.WaitGroup 					// wait group for the pool 
+	worker_id             int
+	target_iterations     int                          // number of iterations worker must complete
+	target_duration       int                          // target duration for the worker
+	cutoff_duration       int                          // cutoff the worker after specific time
+	iteration_func        common.Task                  // function which worker is supposed to run
+	worker_ctx            context.Context              // context for each
+	worker_cancel         context.CancelFunc           // cancel function for the context
+	worker_ctx_timeout    context.Context              // context for each
+	worker_cancel_timeout context.CancelFunc           // cancel function for the context
+	kill_worker           chan (bool)                  // kill worker channel
+	samples_chan          chan metrics.SampleContainer // dedicated channel for sending metrics
+	strategy              Strategy                     // Strategy in workers
+	worker_wg             *sync.WaitGroup              // wait group for the pool
 }
 
 func NewWorker(id int, iteration_func common.Task, worker_ctx context.Context, samples_chan chan metrics.SampleContainer, wg *sync.WaitGroup) Worker {
 	return Worker{
-		worker_id: id,
+		worker_id:      id,
 		iteration_func: iteration_func,
-		worker_ctx: worker_ctx,
-		samples_chan: samples_chan,
-		worker_wg: wg,
+		worker_ctx:     worker_ctx,
+		samples_chan:   samples_chan,
+		worker_wg:      wg,
 	}
 }
 
 func (w *Worker) run_iteration() metrics.SampleContainer {
-	// create a client for the iterations function and fetch metrics from the client 
-	// currently lets stick to the http client 
+	// create a client for the iterations function and fetch metrics from the client
+	// currently lets stick to the http client
 	http_client := &internal.Client{}
 	w.iteration_func(&client.T{}, http_client)
 	metrics := http_client.CollectMetrics()
 	return metrics
 }
 
-// Run for Iterations 
+// Run for Iterations
 func RunForIterations() PoolFunc {
-	return func(i interface {}) {
-		w := i.(Worker) 
+	return func(i interface{}) {
+		w := i.(Worker)
 		//fmt.Println("I am a worker")
 		//fmt.Println(w)
 		for i := 0; i < w.target_iterations; i++ {
 			for {
 				select {
-					case <- w.worker_ctx.Done():
-						w.worker_wg.Done()
-					default: 
-						samples := w.run_iteration()
-						// if !complete {
-						// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i)) 
-						// }\
-						//fmt.Println(samples)
-						w.samples_chan <- samples
+				case <-w.worker_ctx.Done():
+					w.worker_wg.Done()
+				default:
+					samples := w.run_iteration()
+					// if !complete {
+					// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i))
+					// }\
+					//fmt.Println(samples)
+					w.samples_chan <- samples
 				}
 			}
 		}
 	}
-}	
+}
 
-// Run for Constant time 
+// Run for Constant time
 func RunForConstantTime() PoolFunc {
-	return func(i interface {}) {
+	return func(i interface{}) {
 		w := i.(Worker)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(w.target_duration))
-		w.worker_ctx = ctx 
+		w.worker_ctx = ctx
 		w.worker_cancel = cancel
 		//fmt.Println("I am a worker")
 		//fmt.Println(w)
 		for {
 			select {
-			case <- w.worker_ctx.Done(): 
+			case <-w.worker_ctx.Done():
 				w.worker_wg.Done()
-			default: 
+			default:
 				samples := w.run_iteration()
 				// if !complete {
-				// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i)) 
+				// 	panic(fmt.Sprintf("Worker %d, unable to complete iteration %d", w.worker_id, i))
 				// }	\
 				w.samples_chan <- samples
 			}
-		} 
+		}
 	}
 }
 
@@ -142,8 +141,8 @@ func RunNormally() PoolFunc {
 			case <-w.worker_ctx.Done():
 				// kill worker
 				w.worker_wg.Done()
-			default: 
-				// perform each iteration 
+			default:
+				// perform each iteration
 				samples := w.run_iteration()
 				// push to global metrics channel
 				w.samples_chan <- samples
@@ -152,11 +151,11 @@ func RunNormally() PoolFunc {
 	}
 }
 
-// RunOnce 
+// RunOnce
 func RunOnce() PoolFunc {
 	return func(i interface{}) {
-		w := i.(Worker) 
-		// defer w.worker_wg.Done()
+		w := i.(Worker)
+		defer w.worker_wg.Done()
 		samples := w.run_iteration()
 		select {
 		case w.samples_chan <- samples:

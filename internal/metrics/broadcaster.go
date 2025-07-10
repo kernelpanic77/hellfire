@@ -8,17 +8,17 @@ import (
 
 // responsible for reading the metrics chan and sending the data to endpoints
 
-const collectRate = 50 * time.Millisecond
+const collectRate = 5 * time.Millisecond
 
 type Broadcaster struct {
 	endpoints []Endpoint
-	ctx context.Context
+	ctx       context.Context
 }
 
 func NewBroadcaster(endpoints []Endpoint, ctx context.Context) *Broadcaster {
 	return &Broadcaster{
 		endpoints: endpoints,
-		ctx: ctx,
+		ctx:       ctx,
 	}
 }
 
@@ -30,17 +30,17 @@ func (b *Broadcaster) Start(wg *sync.WaitGroup, containers chan SampleContainer)
 			// //fmt.Println("Ishan is a fucking genius")
 			data := FetchBufferedSamples(containers)
 			for _, endpoint := range b.endpoints {
-				// this method should be non blocking, because if we are running multiple tests 
+				// this method should be non blocking, because if we are running multiple tests
 				// all of the TestManagers are writing to the buffer we dont want write to be blocked for that endpoint
 				// //fmt.Println("endpoints")
 				// //fmt.Println(endpoint)
 				for _, samples := range data {
-					endpoint.AddSamples([]SampleContainer{samples}) 
+					endpoint.AddSamples([]SampleContainer{samples})
 				}
 			}
-		case <-b.ctx.Done(): 
+		case <-b.ctx.Done():
 			wg.Done()
-			return 
+			return
 		}
 	}
 }

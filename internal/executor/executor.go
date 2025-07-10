@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"time"
 
 	// "fmt"
 	"log"
@@ -17,9 +18,9 @@ import (
 var logger *log.Logger
 
 type Executor struct {
-	Main *testing.M
+	Main     *testing.M
 	exec_ctx context.Context
-	tests []*TestManager
+	tests    []*TestManager
 }
 
 func NewExecutor(m *testing.M) *Executor {
@@ -27,7 +28,7 @@ func NewExecutor(m *testing.M) *Executor {
 	return &Executor{Main: m, exec_ctx: context.Background(), tests: tests}
 }
 
-// start setup of processes that are more time consuming 
+// start setup of processes that are more time consuming
 func (e *Executor) Setup() int {
 	metrics.RegistryOfRegistry = make(metrics.RegistryMap)
 	exitcode := e.Main.Run()
@@ -43,11 +44,13 @@ func (e *Executor) RunTest(testmetadata *common.TestMetadata) {
 	tm.setup()
 	// // will pass on control to the manager
 	tm.start()
+	time.Sleep(1000 * time.Millisecond)
+	tm.test_termination()
 	tm.waitgroup.Wait()
-	
-	// @ishanwar: TODO: Should only kill the ingester once all the metrics channel is empty and the Buffer of the ingester is also empty 
 
-	// once we have a confirmed completion, trigger the metrics table prep 
+	// @ishanwar: TODO: Should only kill the ingester once all the metrics channel is empty and the Buffer of the ingester is also empty
+
+	// once we have a confirmed completion, trigger the metrics table prep
 	// //fmt.Println("Registry", tm.report.Registry)
 	report_for_term := tm.report.GenerateReport()
 	fmt.Println(report_for_term)

@@ -25,11 +25,11 @@ func NewInfantry(ctx context.Context, testMetadata *common.TestMetadata, metrics
 }
 
 func (infantry *Infantry) Action(wg *sync.WaitGroup, termination context.CancelFunc) {
+	defer wg.Done()
 	for _, scenario := range infantry.Scenarios {
 		infantry.triggerScenario(scenario)
 	}
-	wg.Done()
-	termination()
+	// termination()
 }
 
 func (infantry *Infantry) triggerScenario(scenario common.Scenario) {

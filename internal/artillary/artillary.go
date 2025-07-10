@@ -18,17 +18,17 @@ type Stage struct {
 }
 
 type Artillary struct {
-	tag string
+	tag              string
 	init_workers     int
 	stages           []Stage
 	cutoff_duration  int
 	strategy_workers Strategy
 	SharedIterations int
-	worker_pool 	 *ants.PoolWithFunc
-	task common.Task
-	ctx context.Context
-	metrics_chan chan metrics.SampleContainer
-	registry *metrics.MetricsRegistry
+	worker_pool      *ants.PoolWithFunc
+	task             common.Task
+	ctx              context.Context
+	metrics_chan     chan metrics.SampleContainer
+	registry         *metrics.MetricsRegistry
 }
 
 func NewArtillary(ctx context.Context, scenario common.Scenario, task common.Task, sampleschan chan metrics.SampleContainer) *Artillary {
@@ -43,54 +43,58 @@ func WithSharedIterations(artillary *Artillary, iterations int) *Artillary {
 }
 
 func newArtillary(ctx context.Context, scenario common.Scenario, strategy Strategy, task common.Task, metrics_chan chan metrics.SampleContainer) *Artillary {
-	var poolFunc PoolFunc 
+	var poolFunc PoolFunc
 	total_iters := 0
 	switch strategy {
 	case shared_iterations:
 		poolFunc = RunOnce()
 		total_iters = int(scenario.Iterations)
-	case per_worker_iterations: 
+	case per_worker_iterations:
 		poolFunc = RunForIterations()
-	case constant_workers: 
+	case constant_workers:
 		poolFunc = RunForConstantTime()
-	// case ramping_workers: 
-	// 	break
-	// case constant_arrival_rate: 
-	// 	break 
-	// case ramping_arrival_rate: 
-	// 	break
+		// case ramping_workers:
+		// 	break
+		// case constant_arrival_rate:
+		// 	break
+		// case ramping_arrival_rate:
+		// 	break
 	}
 	pool, err := ants.NewPoolWithFunc(int(scenario.PreAllocatedVUs), poolFunc, ants.WithNonblocking(true), ants.WithPreAlloc(true))
 	if err != nil {
 		panic(err)
 	}
 	return &Artillary{
-		init_workers: int(scenario.PreAllocatedVUs),
-		cutoff_duration: int(scenario.MaxDuration),  
+		init_workers:     int(scenario.PreAllocatedVUs),
+		cutoff_duration:  int(scenario.MaxDuration),
 		SharedIterations: total_iters,
 		strategy_workers: strategy,
-		worker_pool: pool,
-		ctx: ctx,
-		task: task,
-		metrics_chan: metrics_chan,
+		worker_pool:      pool,
+		ctx:              ctx,
+		task:             task,
+		metrics_chan:     metrics_chan,
 	}
 }
 
-func (a *Artillary) start_shared_iterations(wg *sync.WaitGroup) {
+func (a *Artillary) start_shared_iterations(wg *sync.WaitGroup, scenario_cancel context.CancelFunc) {
 	// add number of tasks to the pool
 	wg.Add(1)
-	go func(){
+	go func() {
 		defer wg.Done()
+		worker_wg := &sync.WaitGroup{}
 		for i := 0; i < a.SharedIterations; i++ {
-			w := NewWorker(i, a.task, a.ctx, a.metrics_chan, wg)
+			worker_wg.Add(1)
+			w := NewWorker(i, a.task, a.ctx, a.metrics_chan, worker_wg)
 			//fmt.Println("triggering the test for worker")
 			a.worker_pool.Invoke(w)
 		}
+		worker_wg.Wait()
+		scenario_cancel()
 	}()
 }
 
 func (a *Artillary) start_per_worker_iterations() {
-	// start the number of required workers 
+	// start the number of required workers
 }
 
 func (a *Artillary) start_constant_workers() {
@@ -99,16 +103,21 @@ func (a *Artillary) start_constant_workers() {
 
 func (a *Artillary) StartArtillary() {
 	test_wg := &sync.WaitGroup{}
+	scenario_ctx, scenario_cancel := context.WithCancel(context.Background())
 	test_wg.Add(1)
 	timer := time.NewTimer(time.Duration(a.cutoff_duration * int(time.Second)))
 	go func() {
 		defer test_wg.Done()
-		<-timer.C
-		//fmt.Println("Bas Khatam")
+		select {
+		case <-timer.C:
+			// fmt.Println("complete")
+			scenario_cancel()
+		case <-scenario_ctx.Done():
+		}
 	}()
 	switch a.strategy_workers {
-	case shared_iterations: 
-	a.start_shared_iterations(test_wg)
+	case shared_iterations:
+		a.start_shared_iterations(test_wg, scenario_cancel)
 	}
 	test_wg.Wait()
 }

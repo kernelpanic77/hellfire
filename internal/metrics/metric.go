@@ -22,6 +22,20 @@ const (
 	Data
 )
 
+func MetricTypeString(m MetricType) string{
+	switch m {
+	case Counter:
+		return "counter"
+	case Guage: 
+		return "guage" 
+	case Rate: 
+		return "rate" 
+	case Trend: 
+		return "trend"
+	}
+	return ""
+}
+
 type Metric struct {
 	Type    MetricType
 	Name    string

@@ -50,11 +50,11 @@ func TestFireCreateListLoad(t *testing.T) {
 		// 	},
 		// },
 		{
-			Strategy: "shared-iterations",  
-			Name: "warmup", 
+			Strategy:        "shared-iterations",
+			Name:            "warmup",
 			PreAllocatedVUs: 10,
-			Iterations: 10,  
-			MaxDuration: 20,
+			Iterations:      1,
+			MaxDuration:     20,
 		},
 	}
 	thresholds := []common.Threshold{
@@ -66,4 +66,3 @@ func TestFireCreateListLoad(t *testing.T) {
 	}
 	hellfire.Run(scenarios, thresholds, t, iteration)
 }
-
